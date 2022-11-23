@@ -1,0 +1,217 @@
+---
+title: "HW10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### (a)
+```{r echo=FALSE}
+library(fBasics)
+library(fGarch)
+library(TSA)
+library(astsa)
+setwd("D:/workfiles/439")
+```
+
+```{r echo=FALSE}
+da=read.table("m-mrk4608.txt",header = T)
+mrk=log(da$mrk+1)
+plot(mrk,type="l",main="Log Returns of Merck Stock")
+acf(mrk)
+pacf(mrk)
+Box.test(mrk,lag = 12,type = 'Ljung')
+```
+
+### Answer: According to Ljung-Box test results, the p-value is less than 0.05. There are serial correlations among the log returns at 5% significance level.
+
+```{r}
+eacf(mrk)
+mrk.out=arima(mrk,order = c(4,0,4))
+mrk.out
+```
+
+### (b)
+
+```{r echo=FALSE}
+acf(mrk.out$residuals^2)
+pacf(mrk.out$residuals^2)
+Box.test(mrk.out$residuals^2,lag = 6,type = 'Ljung')
+Box.test(mrk.out$residuals^2,lag = 12,type = 'Ljung')
+```
+
+### Answer: According to Ljung-Box test results, the p-values are both less than 0.05. There do exists autocorrelations among the squared residuals series at 5% significance level. The log returns have some ARCH effects.
+
+### (c)
+
+```{r echo=FALSE}
+m1=garchFit(~garch(3,0),data = mrk,trace = F)
+summary(m1)
+```
+
+## Question 2
+
+### (a)
+
+```{r echo=FALSE}
+GE=read.table("d-geohlc.txt")
+dopen=GE[,4]
+dhigh=GE[,5]
+dlow=GE[,6]
+dclose=GE[,7]
+dopen[1:344]=dopen[1:344]/6
+dopen[345:1098]=dopen[345:1098]/3
+dclose[1:344]=dclose[1:344]/6
+dclose[345:1098]=dclose[345:1098]/3
+dhigh[1:344]=dhigh[1:344]/6
+dhigh[345:1098]=dhigh[345:1098]/3
+dlow[1:344]=dlow[1:344]/6
+dlow[345:1098]=dlow[345:1098]/3
+plot(dclose,type='l',main="Daily Closing Price")
+```
+
+### Comment: The stock price of GE continued to rise for a period of time and then began to fall, and then gradually stabilized. This series is not stationary. 
+
+### (b)
+
+```{r echo=FALSE}
+plot(1:50,dhigh[1:50],type="l",ylab="Stock Price",ylim=c(11,14),col="tan4",main="Daily Stock Info. of GE")
+lines(1:50,dlow[1:50],col="springgreen4")
+lines(1:50,dopen[1:50],lty=2,col="steelblue")
+lines(1:50,dclose[1:50],lty=2,col="pink")
+legend(0, 14, legend=c("daily high","daily low","openning","closing"),
+       col=c("tan4", "springgreen4","steelblue","pink"), lty=c(1,1,2,2), cex=0.8)
+```
+
+### Comment: The trends of the daily high price and the daily low price are similar to each other. Both opening price and closing price fluctuate between the daily high price and daily low price.
+
+### (c)
+
+```{r echo=FALSE}
+plot(log(dclose),type="l",main="Daily Log Returns")
+```
+
+### Comment: The stock price of GE continued to rise for a period of time and then began to fall, and then gradually stabilized. This series is not stationary. But the change of the stock price become more stable after log-transformation than before.
+
+
+### (d)
+
+```{r echo=FALSE}
+acf(log(dclose))
+pacf(log(dclose))
+```
+
+### Comment: From the ACF plot, the closing price series looks like a random walk. From the PACF plot, there is a significant PACF at lag-1. We should try to fit an ARMA model.
+
+### (e)
+
+```{r echo=FALSE}
+eacf(log(dclose))
+ge.out=arima(log(dclose),order = c(3,0,2))
+ge.out
+plot(ge.out$residuals)
+Box.test(ge.out$residuals)
+```
+
+### Comment: According to Ljung-Box test above, the p-value from this model is 0.639 which is greater than 0.05. This model fitted well.
+
+### (f)
+
+```{r echo=FALSE}
+acf(ge.out$residuals)
+pacf(ge.out$residuals)
+```
+
+### Comment: These two plots look similar to each other and show no autocorrelations among the residuals series.
+
+### (g)
+
+```{r echo=FALSE}
+acf(ge.out$residuals^2)
+pacf(ge.out$residuals^2)
+```
+
+### Comment: The ACF plot shows a quit strong autocorrelations among the squred residuals series. We should try to fit an ARCH model. From the PACF plot, there is a cut-off at lag-5. Since we don't start to fit a model with high order, we could start from fitting an ARCH(3) model.
+
+### (h)
+
+```{r echo=FALSE}
+m2=garchFit(~arma(3,2)+garch(4,0),data=log(dclose),include.mean=T,cond.dist="std",trace=F)
+summary(m2)
+```
+
+```{r echo=FALSE}
+sresi=m2@residuals/m2@sigma.t
+pacf(sresi^2)
+Box.test(sresi^2,lag=12,type="Ljung")
+```
+
+```{r echo=FALSE}
+m3=garchFit(~arma(3,1)+garch(1,1),data=log(dclose),include.mean=T,cond.dist="norm",trace=F)
+summary(m3)
+```
+
+```{r echo=FALSE}
+m3cs=garchFit(~arma(1,0)+garch(1,1),data=log(dclose),include.mean=T,cond.dist="std",trace=F)
+summary(m3cs)
+```
+
+```{r echo=FALSE}
+sresi=m3cs@residuals/m3cs@sigma.t # Compute standardized residuals
+acf(sresi)
+acf(sresi**2)
+pacf(sresi**2)
+Box.test(sresi,lag=12,type="Ljung")
+Box.test(sresi^2,lag=12,type="Ljung")
+```
+
+
+```{r echo=FALSE}
+qqplot(rt(1000,9),sresi)
+qqline(sresi)
+```
+
+
+```{r echo=FALSE}
+m4=garchFit(~arma(1,0)+garch(7,0),data=log(dclose),include.mean=T,cond.dist="std",trace=F)
+summary(m4)
+```
+ 
+```{r echo=FALSE}
+sresi=m4@residuals/m4@sigma.t # Compute standardized residuals
+acf(sresi)
+acf(sresi**2)
+pacf(sresi**2)
+Box.test(sresi,lag=12,type="Ljung")
+Box.test(sresi^2,lag=12,type="Ljung")
+```
+
+```{r echo=FALSE}
+qqplot(rt(1000,9),sresi)
+qqline(sresi)
+```
+
+### Comment: The combinations of arma(1,0) + garch(1,1) have a good performance with significant coefficients, but the model fail to pass Ljung-Box test on R^2 for 10,15,20 lags. The combinations of arma(1,0) + arch(7) seems to be a better way. The model passes all the tests except the Ljung-Box test on R^2 for lag-20. Based on the Ljung-Box test on standard residuals and squared standard residuals, they all reported relative large p-value. The model fitted well.
+
+### (i)
+
+```{r echo=FALSE}
+densityPlot(as.timeSeries(sresi))
+xx=(-50:50)/10
+lines(xx,sqrt(9/5)*dt(xx*sqrt(9/5),9))
+```
+
+### Comment: The balck curve is much better than the the gray one especially in the middle. The red curve and black curve and eventually less than gray curve.It has lighter right tail and heavier left tail. This is also not symmetric.  
+
+### (j)
+
+```{r echo=FALSE}
+plot(log(dclose),type="l",main="Return Series")
+plot(m3cs@sigma.t,type="l",main="Estimated Volatility Series")
+```
+
+### Comment: Volatility evolves over time in a continuous manner. It also varies within some fixed range. In addition, the volatility series seems to react differently to a big price increase or a big price drop, referred to as the leverage effect.

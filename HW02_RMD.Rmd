@@ -1,0 +1,172 @@
+---
+title: "HW2"
+author: "Xinze Zhou"
+date: "2021/9/12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### Case 1
+
+```{r eval=TRUE}
+x = rnorm(100, mean = 0, sd = 1)
+eps = rnorm(100, mean = 0, sd = 0.25)
+y = -1+0.5*x+eps
+length(y)
+plot(x,y,col = "steelblue")
+fit1 = lm(y~x)
+summary(fit1)
+
+plot(x, y,col = "steelblue", lwd = 2)
+abline(fit1, col = "gold")
+abline(-1, 0.5, col = "steelblue")
+legend("topleft", c("Least square", "Regression"), col = c("gold", "steelblue"), lty = c(1, 1))
+
+fit2 <- lm(y ~ x + I(x^2))
+summary(fit2)
+```
+```
+
+#### Since the test statistic is about 9.949, we reject the null hypothesis.
+
+## Case 2
+
+```{r echo=FALSE}
+oilfilters = read.table("G:/MS_Statistics/STAT_439_Han_Xiao/oilfilter.txt",header=T)
+print(acf(oilfilters,20,main = "Series Oilfilters"))
+Box.test(oilfilters,lag = 5,type='Ljung')
+```
+
+#### Since the test statistic is about 2.146, we reject the null hypothesis.
+
+## Case 3
+
+```{r echo=FALSE}
+x = 2*cos(2*pi*(1:500)/50+0.6*pi) #signal
+xt = x + rnorm(500,0,1) #signal plus noise
+print(acf(x,100))
+print(acf(xt,100))
+Box.test(x,lag = 5,type='Ljung')
+Box.test(xt,lag = 5,type='Ljung')
+```
+
+#### Since the test statistic is about 22.182 for x, we reject the null hypothesis.And the test statistic is about 15.295 for xt, we also reject the null hypothesis.
+
+## Question 2
+
+## (a).
+
+```{r echo=FALSE}
+hawaii_new<-read.table('G:/MS_Statistics/STAT_439_Han_Xiao/hawaii_new.txt')
+colnames(hawaii_new)<-c('year-month','total','west-bound','east-bound')
+plot(hawaii_new$total,type = 'l',xaxt='n',xlab='year-month',ylab='total',main='Time series plots',lwd=2,col="gold")
+axis(1,at=1:nrow(hawaii_new),labels=hawaii_new$'year-month')
+lines(hawaii_new$'west-bound',type = 'l',col='red',lwd=2)
+lines(hawaii_new$'east-bound',type = 'l',col='steelblue',lwd=2)
+legend("topleft", bty = "n", legend = c("year-month","west-bound", "east-bound"), col = c("gold","red", "steelblue"), lty = c(1,1))
+```
+
+#### Trend: The number of passengers, whether in the East and West or the total number, increased year by year from 1970 to 1995.
+
+#### Seasonality: The peak number of passengers is from July to August every year.
+
+#### Variance: The variance gradually increases and decreases with time, and then tends to be stable.
+
+#### Possible outliers: It may be the maximum or minimum of the total number of passengers per year; It may be the maximum or minimum of the total number of passengers under the same economic environment in a period of time.
+
+#### Relationship between the three series and others: Total = west-bound + east-bound.
+
+
+## (b).
+
+```{r echo=FALSE}
+hawaii_new<-read.table('G:/MS_Statistics/STAT_439_Han_Xiao/hawaii_new.txt')
+colnames(hawaii_new)<-c('year-month','total','west-bound','east-bound')
+log_total<-log(hawaii_new$total)
+plot(log_total,type = 'l',xaxt='n',xlab='year-month',ylab='log transformation of total',main='Take the logarithm to stablize the variance',col="steelblue",lwd=2)
+```
+
+#### Comment: The series after log transformation eliminates the heteroscedasticity problem and makes the series look stable in an interval.
+
+## (c).
+
+```{r echo=FALSE}
+model_linear<-lm(log_total~poly(1:length(log_total),1))
+model_quadratic<-lm(log_total~poly(1:length(log_total),2))
+model_cubic<-lm(log_total~poly(1:length(log_total),3))
+model_quadrinomial<-lm(log_total~poly(1:length(log_total),4))
+plot(1:length(log_total),log_total,xaxt='n',xlab='year-month',ylab='total',main='polynomial fitting model ')
+axis(1,at=1:nrow(hawaii_new),labels=hawaii_new$`year-month`)
+lines(model_linear$fitted.values,col='red',lwd=2)
+lines(model_quadratic$fitted.values,col='green',lwd=2)
+lines(model_cubic$fitted.values,col='steelblue',lwd=2)
+lines(model_quadrinomial$fitted.values,col='purple',lwd=2)
+
+par(mfrow=c(2,1))
+plot(1:length(log_total),log_total,xaxt='n',xlab='year-month',ylab='total',main='polynomial fitting model ',type='l')
+lines(model_quadrinomial$fitted.values,col='gold',lwd=1,type='l')
+mean_log_total<-c()
+for (i in 1:(length(log_total)/12)-1) {
+  mean_log_total<-c(mean_log_total,rep(mean(log_total[(1+i*12):(12+i*12)]),12))
+}
+log_total_detrended<-log_total-mean_log_total
+lines(mean_log_total,col='steelblue',lwd=0.5,type='l')
+
+plot(1:length(log_total),log_total_detrended,col='steelblue',xaxt='n',xlab='year-month',ylab='total',main='Detrended data of the log_total',type='l')
+```
+
+#### According to the fitting diagram, the effect of the quartic term curve is better. The polynomial degree I will use is 4.
+
+#### The data with trend items removed appears more stable.
+
+## (d).
+
+```{r echo=FALSE}
+n=length(log_total)
+index=1:n
+index_month=as.factor(rep(1:12,n/12))
+log_total.lm=lm(log_total~index+index_month)
+print(log_total.lm)
+par(mfrow=c(2,1))
+plot(log_total,ylab="Log total",main="Log total and the fitted trend + seasonal pattern",type='l',xaxt='n',xlab='year-month')
+axis(1,at=1:nrow(hawaii_new),labels=hawaii_new$`year-month`)
+lines(log_total.lm$fitted,col="gold",type='l')
+log_total_detrended_deseasoned<-diff(log_total_detrended,lag=12)
+plot(1:(length(log_total)-12),log_total_detrended_deseasoned,col='steelblue',xaxt='n',xlab='year-month',ylab='total',main='Detrended_deseasoned data of the log_total',type='l')
+summary(log_total.lm)
+```
+
+### Among the estimated coefficients of seasonal factors, the coefficient from July to August is the most significant and large, followed by March, June and September, may and November are generally significant, and other months are not significant.
+
+### It can be seen that the number of tourists has a seasonal effect, especially from July to August.
+
+## (e).
+
+```{r echo=FALSE}
+year_month1996<-data.frame(index=313:324,index_month=as.factor(1:12))
+predictions<-exp(predict(log_total.lm,newdata = year_month1996))
+par(mfrow=c(1,1))
+plot(c(hawaii_new$total,predictions),xaxt='n',xlab='year-month',ylab='total',main='Predictions plots')
+axis(1,at=(1:(nrow(hawaii_new)+12)),labels=c(hawaii_new$`year-month`,9601:9612))
+lines(1:313,c(hawaii_new$total,predictions)[1:313],col='steelblue',lwd=1,lty=1)
+lines(313:324,c(hawaii_new$total,predictions)[313:324],col='gold',lwd=2,lty=2)
+abline(v=312,col="green",lwd=2,lty=2)
+```
+
+## (f).
+
+```{r echo=FALSE}
+par(mfrow=c(2,1))
+log_total.ds=diff(log_total,lag=12)
+plot(log_total.ds,ylab="Log total",main="Take seasonal differencing",type="l",xaxt='n',xlab='year-month',col="steelblue")
+axis(1,at=1:nrow(hawaii_new),labels=hawaii_new$`year-month`)
+
+log_total.dsdt=diff(log_total.ds)
+plot(log_total.dsdt,type="l",ylab="Log total",main="Take another differencing",xaxt='n',xlab='year-month',col="steelblue")
+axis(1,at=1:nrow(hawaii_new),labels=hawaii_new$`year-month`)
+```

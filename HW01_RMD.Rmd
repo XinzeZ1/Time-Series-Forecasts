@@ -1,0 +1,73 @@
+---
+title: "HW01"
+author: "Xinze Zhou"
+date: "2021/9/4"
+output: html_document
+---
+
+
+
+## Question 1
+### Case 1
+
+```{r echo=FALSE}
+library(TSA)
+data("tempdub")
+plot(tempdub,ylab = "Inches",xlab = "Year",type="o",col = "steelblue",lwd = 2,
+     main = "Average Monthly Temperature in Dibike, Iowa")
+```
+
+#### Pattern: This time series shows a regular seasonal pattern. Because the inclination of the northern hemisphere towards the sun varies with seasons, January and February are quite cold and the temperature is similar, but it is very different from the warm June, July and August.
+
+### Case 2
+
+```{r echo=FALSE}
+library(TSA)
+data(oilfilters)
+plot(oilfilters,type = "o", ylab = "Sales", col = "steelblue", lwd = 2,
+     main = "Monthly Sales Volume of Oil Filter")
+```
+
+#### Pattern: This time series shows a seasonal pattern. Sales in all winter months such as January and February are often high, while sales in September, October and November are generally low.
+
+### Case 3
+
+```{r echo=FALSE}
+#Signal-plus-noise model
+
+x = 2*cos(2*pi*(1:500)/50+0.6*pi) #signal
+xt = x + rnorm(500,0,1) #signal plus noise
+plot.ts(xt, main="Cosine Wave (red) and Cosine Wave with Noise (blue)", col="steelblue")
+lines(x, col="red")
+```
+
+#### Pattern: This time series looks sinusoidal and has a cycle every 50 lags.
+
+## Question 5
+### (b)
+
+```{r echo=FALSE}
+T = 500
+x = rnorm(500,mean = 0, sd = 1)
+xt = vector()
+for(i in 1:T){
+  xt[i] = x[i+1]*x[i]
+}
+plot.ts(xt,col = "steelblue", lwd = 2)
+```
+
+### (d)
+
+```{r echo=FALSE}
+T = 500
+x = rnorm(500,mean = 0, sd = 1)
+xt = vector()
+for(i in 1:T){
+  xt[i] = x[i+1]*x[i]
+}
+yt = vector()
+for(i in 1:T){
+  yt[i] = xt[i]*xt[i]
+}
+plot.ts(yt,col = "red", lwd = 2)
+```

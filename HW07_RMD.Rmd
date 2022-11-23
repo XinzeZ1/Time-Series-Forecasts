@@ -1,0 +1,304 @@
+---
+title: "HW7"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+```{r echo=FALSE}
+setwd("D:/workfiles/439/")
+```
+
+```{r echo=FALSE}
+data = read.table("D:/workfiles/439/m-ibm3dx2608.txt",header = TRUE)
+```
+
+```{r echo=FALSE}
+vw.ts = ts(data$vwrtn, start = 1926, frequency = 12)
+```
+
+# 1(a)
+```{r echo=FALSE}
+dimension_reduction = function(vw.ts,n,model_type="AR"){
+  x = 0
+  se_list = c()
+  fix_list = rep(NA,n+1)
+  current_aic = Inf
+  drop_index = 0
+  statistics = c()
+  removal_list = c()
+
+  while (x == 0){
+    
+    if (model_type == "AR"){
+    AR9 = arima(vw.ts, order = c(9,0,0),fixed = fix_list)
+    }else if (model_type == "MA"){
+    AR9 = arima(vw.ts, order = c(0,0,9),fixed = fix_list)
+    }
+    
+    matrix = AR9$var.coef
+    dimension = dim(matrix)[1]
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    
+    model_aic = AR9$aic
+    if (model_aic <= current_aic){
+      current_aic = model_aic
+      best_model = AR9
+    }
+    
+    coeffs = coef(AR9)
+    matrix = AR9$var.coef
+    dimension = dim(matrix)[1]
+
+    
+    
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list = removal_list[removal_list !=0]
+    
+    for (j in 1:length(removal_list))
+    if (length(removal_list) == 0){
+      return(best_model)
+    }
+    
+    drop_index = which(abs(statistics) == min(removal_list))
+    removal_list = removal_list[-drop_index]
+    fix_list[drop_index] = 0
+  }
+}
+```
+
+```{r echo=FALSE}
+-2995.07/length(vw.ts)
+```
+
+```{r echo=FALSE}
+arima(vw.ts, order = c(9,0,0))
+```
+
+```{r echo=FALSE}
+-3000.23/length(vw.ts)
+```
+
+```{r echo=FALSE}
+modelAR = dimension_reduction(vw.ts,9)
+modelAR
+```
+
+```{r echo=FALSE}
+-3000.23/length(vw.ts)
+```
+
+```{r echo=FALSE}
+Box.test(modelAR$residuals,type = "Ljung",lag = 12,fitdf = 10)
+```
+
+## Answer: since the p-value is 0.1825 and which is greater than 0.05. The model fitted well. Compared with vw.ar9.1, their aic are same which is -3000.23. The performance of these two models are same.
+
+# 1 (b)
+```{r echo=FALSE}
+modelMA = dimension_reduction(vw.ts,9,"MA")
+modelMA
+```
+
+```{r echo=FALSE}
+-3002.28/length(vw.ts)
+```
+
+```{r echo=FALSE}
+Box.test(modelMA$residuals,type = "Ljung",lag = 12,fitdf = 10)
+```
+## Answer: since the p-value is 0.6302 and which is greater than 0.05. The model fitted well. Compared with vw.ar9.3, the aic of vw.ar9.3 is -3005.03 and the new model's aic is -3002.28 which is bigger than vw.ar9.3. Thus, vw.ar9.3 has a better performance. 
+
+
+# 1 (c)
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5))
+ARMA55
+```
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, NA, NA, NA, NA, NA, NA, NA, NA))
+```
+
+```{r echo=FALSE}
+ARMA55
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, NA, NA, NA, NA, NA, 0, NA, NA))
+ARMA55
+```
+```{r echo=FALSE}
+-3008.46/length(vw.ts)
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, 0, NA, NA, NA, NA, 0, NA, NA))
+ARMA55
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, 0, NA, NA, NA, 0, 0, NA, NA))
+ARMA55
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, 0, NA, NA, NA, 0, 0, 0, NA))
+ARMA55
+```
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, 0, 0, NA, NA, 0, 0, 0, NA))
+ARMA55
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(0, NA, 0, 0, 0, NA, NA, 0, 0, 0, NA))
+ARMA55
+```
+
+
+```{r echo=FALSE}
+    coeffs = coef(ARMA55)
+    matrix = ARMA55$var.coef
+    dimension = dim(matrix)[1]
+    se_list = c()
+    
+    for (i in 1:(dimension)){
+
+      se_list[i] = sqrt(matrix[i,i])
+    }
+    statistics = coeffs/se_list
+    removal_list = abs(statistics[abs(statistics) < 2])
+    removal_list
+```
+
+```{r echo=FALSE}
+ARMA55 = arima(vw.ts, order = c(5,0,5),fixed = c(NA, NA, 0, 0, 0, 0, NA, 0, 0, 0, 0))
+ARMA55
+```
+
+```{r echo=FALSE}
+Box.test(ARMA55$residuals,type = "Ljung",lag = 12,fitdf = 10)
+```

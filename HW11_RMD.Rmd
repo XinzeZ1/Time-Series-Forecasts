@@ -1,0 +1,116 @@
+---
+title: "HW11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("D:/workfiles/439/")
+library(dlm)
+```
+
+## Question 2
+
+### (a).
+
+```{r}
+dlt=read.table("lt.txt",header = F)
+dlt=unlist(dlt)
+N=length(dlt)
+
+para.start=c(1,1)
+lt=function(x){
+    ltm=dlm(FF = 1, V = x[1], GG = 1, W = x[2], m0 = 0.2, C0=2.26)
+    return(ltm)
+}
+m.lt=dlmMLE(y = dlt, parm = para.start, build = lt,lower=c(0,0),upper=c(100,100),hessian = TRUE, control = list(maxit = 500))
+m.lt$par
+```
+
+### (b).
+
+```{r}
+s.filter=dlmFilter(dlt,lt(m.lt$par))
+plot(s.filter$a,type="l",ylim=c(-4,2.5),xlab="Day",ylab="Value",main="Preidction")
+s.pv=rep(0,N)
+for (t in 1:N){
+    s.pv[t] = s.filter$U.R[[t]]%*%diag(s.filter$D.R[t,]^2,nrow=1)%*%t(s.filter$U.R[[t]])
+}
+lines(s.filter$a+1.96*sqrt(s.pv),lty=3)
+lines(s.filter$a-1.96*sqrt(s.pv),lty=3)
+```
+
+### (c).
+
+```{r}
+plot(s.filter$m[-1],type="l",ylim=c(-4,2.5),xlab="Day",ylab="Value",main="Filtering")
+s.fv=rep(0,N)
+for (t in 2:(N+1)){
+    s.fv[t-1] = s.filter$U.C[[t]]%*%diag(s.filter$D.C[t,]^2,nrow=1)%*%t(s.filter$U.C[[t]])
+}
+lines(s.filter$m[-1]+1.96*sqrt(s.fv),lty=3)
+lines(s.filter$m[-1]-1.96*sqrt(s.fv),lty=3)
+```
+
+### (d).
+
+```{r}
+## MLE
+para.start=c(1,1)
+lt=function(x){
+    ltm=dlm(FF = 1, V = x[1], GG = 1, W = x[2], m0 = 0, C0=10^7)
+    return(ltm)
+}
+m.lt=dlmMLE(y = dlt, parm = para.start, build = lt,lower=c(0,0),upper=c(100,100),hessian = TRUE, control = list(maxit = 500))
+m.lt$par
+```
+
+### (e).
+
+```{r}
+## filtering
+s.filter=dlmFilter(dlt,lt(m.lt$par))
+plot(s.filter$m[-1],type="l",ylim=c(-4,2.5),xlab="Day",ylab="Value",main="Filtering")
+s.fv=rep(0,N)
+for (t in 2:(N+1)){
+    s.fv[t-1] = s.filter$U.C[[t]]%*%diag(s.filter$D.C[t,]^2,nrow=1)%*%t(s.filter$U.C[[t]])
+}
+lines(s.filter$m[-1]+1.96*sqrt(s.fv),lty=3)
+lines(s.filter$m[-1]-1.96*sqrt(s.fv),lty=3)
+```
+
+
+```{r}
+## Prediction
+plot(s.filter$a,type="l",ylim=c(-4,2.5),xlab="Day",ylab="Value",main="Preidction")
+s.pv=rep(0,N)
+for (t in 1:N){
+    s.pv[t] = s.filter$U.R[[t]]%*%diag(s.filter$D.R[t,]^2,nrow=1)%*%t(s.filter$U.R[[t]])
+}
+lines(s.filter$a+1.96*sqrt(s.pv),lty=3)
+lines(s.filter$a-1.96*sqrt(s.pv),lty=3)
+```
+
+
+```{r}
+s.smooth=dlmSmooth(dlt,lt(m.lt$par))
+
+plot(s.smooth$s[-1],type="l",ylim=c(-3.5,2),xlab="Day",ylab="Value",main="Smoothing")
+s.sv=rep(0,N)
+for (t in 2:(N+1)){
+    s.sv[t-1] = s.smooth$U.S[[t]]%*%diag(s.smooth$D.S[t,]^2,nrow=1)%*%t(s.smooth$U.S[[t]])
+}
+lines(s.smooth$s[-1]+1.96*sqrt(s.sv),lty=3)
+lines(s.smooth$s[-1]-1.96*sqrt(s.sv),lty=3)
+```
+
+### (f).
+
+```{r}
+dlt.st=StructTS(dlt,type="level") 
+dlt.st
+```
+

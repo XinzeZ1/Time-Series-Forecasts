@@ -1,0 +1,96 @@
+---
+title: "HW4"
+author: "Xinze Zhou"
+date: "2021/9/25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+```{r}
+set.seed(1)
+setwd("G:/MS_Statistics/STAT_439_Han_Xiao/")
+T = 200
+r = 0.2+arima.sim(n=T,model = list(ar=c(0.5,0.3),ma=c(0.6,0.2), sd=0.5))
+plot(r,main=paste("ARMA(2,2), phi1=0.5, phi2=0.3, theta1=0.6, theta2=0.2"),xlab="Time",ylab="r",col = "steelblue", lwd = 2)
+acf(r, main="ACF for ARMA(2,2)")
+```
+
+## Question 2
+
+### Model(i)
+
+```{r}
+set.seed(1)
+setwd("G:/MS_Statistics/STAT_439_Han_Xiao/")
+T = 600
+r1 = 0.3+arima.sim(n=T,model = list(ar=c(0.8,-0.5,-0.2), sd=2))
+plot(r1,main=paste("AR(3), phi1=0.8, phi2=-0.5, phi3=-0.2"),xlab="Time",ylab="r",col = "steelblue", lwd = 2)
+source("memory.R")
+rr1 = memory(ar=c(0.8,-0.5,-0.2),lag = 10)
+plot(0:10,rr1,type = "h")
+title("Memory Function: AR(3), phi1=0.8, phi2=-0.5, phi3=-0.2")
+abline(h=0)
+source("auto.cov.R")
+rr1s=auto.cov(ar=c(0.8,-0.5,-0.2),sigma2=4,lag = 10)
+rr1s=rr1s/rr1s[1]
+plot(0:10,rr1s,type='h')
+title("ACF: AR(3), phi1=0.8, phi2=-0.5, phi3=-0.2")
+abline(h=0)
+acf(r1,main="Sample ACF for AR(3)")
+```
+
+#### The true auto correlations plot has a similar shape as sample autocorrelations.
+
+### Model(ii)
+
+```{r}
+set.seed(1)
+setwd("G:/MS_Statistics/STAT_439_Han_Xiao/")
+T = 600
+r2 = 0.3+arima.sim(n=T,model = list(ma=c(0.8,-0.5,-0.2), sd=2))
+plot(r2,main=paste("MA(3), theta1=0.8, theta2=-0.5, theta3=-0.2"),xlab="Time",ylab="r",col = "steelblue", lwd = 1.5)
+source("memory.R")
+rr2 = memory(ma=c(0.8,-0.5,-0.2),lag = 10)
+plot(0:10,rr2,type = "h")
+title("Memory Function: MA(3), theta1=0.8, theta2=-0.5, theta3=-0.2", ylab = "r")
+abline(h=0)
+source("auto.cov.R")
+rr2s=auto.cov(ar=c(0.8,-0.5,-0.2),sigma2=4,lag = 10)
+rr2s=rr2s/rr2s[1]
+plot(0:10,rr2s,type='h')
+title("ACF: AR(3), theta1=0.8, theta2=-0.5, theta3=-0.2")
+abline(h=0)
+acf(r2,main="Sample ACF for AR(3)")
+```
+
+#### The true auto correlations plot has a similar shape as sample autocorrelations. In addition, the true autocorrelations plot has more stable tail.
+
+### Model(iii)
+
+```{r}
+set.seed(1)
+setwd("G:/MS_Statistics/STAT_439_Han_Xiao/")
+T = 600
+r3 = 0.3+arima.sim(n=T,model = list(ar=c(0.8,-0.5,-0.2), ma=c(0.5,0.3),sd=2))
+plot(r3,main=paste("ARMA(3,2), phi1=0.8, phi2=-0.5, phi3=-0.2,theta1=0.5,theta2=0.3"),xlab="Time",ylab="r",col = "steelblue", lwd = 2)
+source("memory.R")
+rr3 = memory(ar=c(0.8,-0.5,-0.2), ma=c(0.5,0.3),lag = 10)
+plot(0:10,rr3,type = "h")
+title("Memory Function: ARMA(3,2), phi1=0.8, phi2=-0.5, phi3=-0.2, theta1=0.5, theta2=0.3")
+abline(h=0)
+source("auto.cov.R")
+rr3s=auto.cov(ar=c(0.8,-0.5,-0.2), ma=c(0.5,0.3), sigma2=4,lag = 10)
+rr3s=rr3s/rr3s[1]
+plot(0:10,rr3s,type='h')
+title("ACF: ARMA(3,2), phi1=0.8, phi2=-0.5, phi3=-0.2, theta1=0.5, theta2=0.3")
+abline(h=0)
+acf(r3,main="Sample ACF for ARMA(3,2)")
+```
+
+#### The true auto correlations plot has a similar shape as sample autocorrelations.
+

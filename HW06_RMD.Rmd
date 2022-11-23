@@ -1,0 +1,199 @@
+---
+title: "HW6"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### (a).
+
+```{r echo=FALSE}
+setwd("D:/workfiles/439/")
+library(fBasics)
+library(tseries)
+library(astsa)
+source("arima.predict.R")
+source("memory.R")
+source("auto.cov.R")
+source("dl.predict.R")
+```
+
+```{r echo=FALSE}
+da=read.table("m-unrate.txt",header=T)
+vw=cumsum(da[,4])
+vw=diff(vw)
+plot.ts(vw, xlab="Time", ylab="Value", col="steelblue", lwd=2, main="Monthly US Unemployment Rate")
+vw.ar12=arima(vw,order=c(12,1,0))
+vw.ar12
+```
+
+### (b).
+```{r echo=FALSE}
+acf(vw)
+Box.test(vw.ar12$residuals,lag=12,type='Ljung')
+```
+
+#### Answer: The residuals do not look like a white noise.
+
+### (c).
+
+```{r echo=FALSE}
+pred = I0.predict(vw,ar=vw.ar12$coef,ma=0,mu=0,origin=734,h=4,sigma2=0.03819)
+df = data.frame("April" = pred[1,1], "May" = pred[1,2],"June" = pred[1,3],"July" = pred[1,4])
+row.names(df) = "Prediction"
+df
+```
+
+```{r echo=FALSE}
+Upper = pred[1,] + 1.96*pred[2,]
+Lower = pred[1,] - 1.96*pred[2,]
+df2 = data.frame("April" = c(Upper[1],Lower[1]), 
+                 "May" = c(Upper[2],Lower[2]),
+                 "June" = c(Upper[3],Lower[3]),
+                 "July" = c(Upper[4],Lower[4]))
+row.names(df2) = c("Upper","Lower")
+df2
+```
+
+
+### (d).
+
+```{r echo=FALSE}
+pred2 = I0.predict(vw,ar=vw.ar12$coef,ma=0,mu=0,origin=720,h=15,sigma2=0.03819)
+```
+
+```{r echo=FALSE}
+df3 = data.frame(t(pred2[1,]))
+row.names(df3) = "Prediction"
+df3
+```
+
+```{r echo=FALSE}
+Upper2 = pred2[1,] + 1.96*pred2[2,]
+Lower2 = pred2[1,] - 1.96*pred2[2,]
+df4 = data.frame(t(Upper2))
+df4 = rbind(df4,Lower2)
+row.names(df4) = c("Upper","Lower")
+df4
+```
+
+### (e).
+
+```{r echo=FALSE}
+interval = 721:735
+plot(interval,vw[interval],pch=3,xlim=c(720,735),ylim=c(-6,9),col="red",xlab="Time",ylab="Value", main="Comparison")
+lines(interval,vw[interval],col="tan4")
+lines(interval,pred2[1,], col="steelblue")
+points(interval,pred2[1,],pch=2, col="steelblue")
+lines(interval,pred2[1,]+2*pred2[2,],lty=2,col="springgreen4")
+lines(interval,pred2[1,]-2*pred2[2,],lty=2,col="springgreen4")
+
+legend(720, -3, legend=c("True Value", "Prediction","Interval"),
+       col=c("red", "blue","green"), lty=c(1,1,2), cex=0.8)
+```
+
+## Question 2
+
+### (1)
+```{r echo=FALSE}
+dpi=read.table("dpi.txt",header = T)
+dpi.ts=ts(dpi[,4],frequency = 3,start = c(1953,01))
+plot(dpi.ts,ylim=c(0,10000),ylab="dpi",xlab="year",col="steelblue",lwd=2,main="The Quarterly Disposable Personal Income")
+```
+
+#### Answer: Yes, the time series should be transformed to achive stationary.
+
+### (2).
+```{r echo=FALSE}
+dpi.ts=log(dpi.ts)
+plot(dpi.ts,ylab="log(dpi)",xlab="year",col="steelblue",lwd=2,main="The Quarterly Disposable Personal Income")
+```
+
+### (3).
+```{r echo=FALSE}
+acf(dpi.ts,lag=36)
+pacf(dpi.ts,lag=36)
+source("EACF.R")
+EACF(dpi.ts,p=12,q=12)$seacf
+```
+
+#### Answer: Proposed Model: Model(1): ARMA(2,1) with both positive p=1 and q=2; MOdel(2): ARMA(2,5) with both positive p=2 and q=5; Model(3): ARMA(7,1) with both positive p=7 and q=1.
+
+### (4).
+
+#### Model(1)
+```{r echo=FALSE}
+out1=arima(dpi.ts,order=c(2,0,1))
+out1
+plot(out1$residuals,ylab="Value",col="steelblue", main="Residual Series",lwd=2)
+acf(out1$residuals)
+pacf(out1$residuals)
+EACF(out1$residuals)
+Box.test(out1$residuals,lag = 12)
+AIC(out1)
+predict1 = I0.predict(dpi.ts,ar=c(out1$coef[1], out1$coef[2]),ma=out1$coef[3],mu=out1$coef[4],origin = 210, h=30,sigma2 = out1$sigma2)
+```
+
+```{r}
+#MSE
+mean(predict1[2,])
+```
+
+#### Model(2)
+
+```{r echo=FALSE}
+out2=arima(dpi.ts,order=c(2,0,5))
+out2
+plot(out2$residuals,ylab="Value",col="tan4", main="Residual Series",lwd=2)
+acf(out2$residuals)
+pacf(out2$residuals)
+EACF(out2$residuals)
+Box.test(out2$residuals,lag = 12)
+AIC(out2)
+predict2 = I0.predict(dpi.ts,ar=c(out2$coef[1], out2$coef[2]),ma=c(out2$coef[3],out2$coef[4],out2$coef[5],out2$coef[6],out2$coef[7]),mu=out2$coef[8],origin = 210, h=30,sigma2 = out2$sigma2)
+```
+
+```{r}
+#MSE
+mean(predict2[2,])
+```
+
+#### Model(3)
+
+```{r echo=FALSE}
+out3=arima(dpi.ts,order=c(7,0,1))
+out3
+plot(out3$residuals,ylab="Value",col="springgreen4", main="Residual Series",lwd=2)
+acf(out3$residuals)
+pacf(out3$residuals)
+EACF(out3$residuals)
+Box.test(out3$residuals,lag = 12)
+AIC(out3)
+predict3 = I0.predict(dpi.ts,ar=c(out3$coef[1], out3$coef[2],out3$coef[3],out3$coef[4],out3$coef[5],out3$coef[6],out3$coef[7]),ma=out3$coef[8],mu=out1$coef[9],origin = 210, h=30,sigma2 = out3$sigma2)
+```
+
+```{r}
+#MSE
+mean(predict3[2,])
+```
+
+### (5)
+
+```{r}
+AIC(out1)
+AIC(out2)
+AIC(out3)
+BIC(out1)
+BIC(out2)
+BIC(out3)
+```
+
+#### Answer: The best model is ARMA(7,1) with both positive p=7 and q=1 because both AIC and BIC of this model are the lowest one among these three models.
+
+### (6)
+
+#### Answer: The first thing we should do is an exploratory analysis of the series to try and figure out what the data looks like. Figures from Question(1) shows what the time series data looks like. Then, we know that the EACF table's upper left vertex will identify the order of (p,q). Then I choose three sets of p and q to test their performance.First model is ARMA(2,1) and its AIC and BIC are -1045.798 and -1029.062 respectively. Second model is ARMA(2,5) and its AIC and BIC are -1227.82 and -1197.696 respectively.Third model is ARMA(2,5) and its AIC and BIC are -1227.82 and -1197.696 respectively. Furthermore, according to the ACF and PACF plot, we see that residuals of the ARMA(7,1) model do not have any minor serial coorelations and appears to be adequate. It is important to make a prediction and edit the policy from the results of studying this series. It would help people understand the situation of disposable personal income better.

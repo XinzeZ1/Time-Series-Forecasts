@@ -1,0 +1,92 @@
+---
+title: "HW5"
+author: "Xinze Zhou"
+date: "2021/10/3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 2.(5)
+
+### Model(i) AR(3)
+
+```{r echo=FALSE}
+setwd("G:/MS_Statistics/STAT_439_Han_Xiao/")
+set.seed(101)
+x=arima.sim(model=list(ar=c(0.8,-0.5,-0.2)),sd=2,n=20000)+0.3
+nn=5000
+xx=x[(nn-400):nn]
+
+source("arima.predict.R")
+pred=I0.predict(xx,ar=c(0.8,-0.5,-0.2),mu=0.3,origin=length(xx),h=8,sigma2=4)
+pred
+
+nt=8
+tt=(nn-5):nn
+xxx=x[tt]
+rr=range(c(xxx,pred[1,]+2*pred[2,],pred[1,]-2*pred[2,]))*c(0.9,1.1)
+plot(tt,xxx,pch=3,xlim=c(nn-6,nn+nt),ylim=rr)
+lines(tt,xxx)
+lines(c(nn,nn),rr,lty=3)
+points(nn+1:nt,pred[1,],pch=2)
+lines(nn+0:nt,c(x[nn],pred[1,]),lty=5,col="blue")
+lines(nn+1:nt,pred[1,]+2*pred[2,],lty=2,col="blue")
+lines(nn+1:nt,pred[1,]-2*pred[2,],lty=2,col="blue")
+lines(c(nn-6,nn+nt),c(1,1)*0.3,lty=10)
+title("Prediction and prediction interval of AR(3)")
+
+```
+
+
+### Model(ii) MA(3)
+```{r echo=FALSE}
+set.seed(101)
+x=arima.sim(model=list(ma=c(0.8,-0.5,-0.2)),sd=2,n=20000)+0.3
+nn=5000
+xx=x[(nn-400):nn]
+nt=8
+
+pred=I0.predict(xx,ma=c(0.8,-0.5,-0.2),mu=0.3,origin=length(xx),h=nt,sigma2=4)
+
+
+tt=(nn-5):nn
+xxx=x[tt]
+rr=range(c(xxx,pred[1,]+2*pred[2,],pred[1,]-2*pred[2,]))*c(0.9,1.1)
+plot(tt,xxx,pch=3,xlim=c(nn-6,nn+nt),ylim=rr)
+lines(tt,xxx)
+lines(c(nn,nn),rr,lty=3)
+points(nn+1:nt,pred[1,],pch=2)
+lines(nn+0:nt,c(x[nn],pred[1,]),lty=5,col="blue")
+lines(nn+1:nt,pred[1,]+2*pred[2,],lty=2,col="blue")
+lines(nn+1:nt,pred[1,]-2*pred[2,],lty=2,col="blue")
+lines(c(nn-6,nn+nt),c(1,1)*0.3,lty=10)
+title("Prediction and prediction interval of MA(3)")
+```
+
+### Model(iii) ARMA(3,2)
+
+```{r echo=FALSE}
+set.seed(101)
+x=arima.sim(model=list(ar=c(0.8,-0.5,-0.2), ma=c(0.5,0.3)),sd=2,n=20000)+0.3
+nn=5000
+xx=x[(nn-400):nn]
+
+pred=I0.predict(xx,ar=c(0.8,-0.5,-0.2),ma=c(0.5,0.3),mu=0.3,origin=length(xx),h=nt,sigma2=4)
+
+tt=(nn-5):nn
+xxx=x[tt]
+rr=range(c(xxx,pred[1,]+2*pred[2,],pred[1,]-2*pred[2,]))*c(0.9,1.1)
+plot(tt,xxx,pch=3,xlim=c(nn-6,nn+nt),ylim=rr)
+lines(tt,xxx)
+lines(c(nn,nn),rr,lty=3)
+points(nn+1:nt,pred[1,],pch=2)
+lines(nn+0:nt,c(x[nn],pred[1,]),lty=5,col="blue")
+lines(nn+1:nt,pred[1,]+2*pred[2,],lty=2,col="blue")
+lines(nn+1:nt,pred[1,]-2*pred[2,],lty=2,col="blue")
+lines(c(nn-6,nn+nt),c(1,1)*0.3,lty=10)
+title("Prediction and prediction interval of ARMA(3,2)")
+```
+

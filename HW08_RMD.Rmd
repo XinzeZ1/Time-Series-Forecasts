@@ -1,0 +1,265 @@
+---
+title: "HW8"
+output:
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+### (1)
+```{r echo=FALSE}
+setwd("D:/workfiles/439/")
+library(fUnitRoots)
+library(TSA)
+library(forecast)
+library(astsa)
+source("rolling.forecast.R")
+source("EACF.R")
+```
+
+
+```{r echo=FALSE}
+da=read.table("q-gdpdef.txt",header = T)
+gdp=ts(da[,4],frequency = 4,start = c(1947,01))
+plot(gdp,col="steelblue",lwd=2,main="US Quarterly GDP")
+acf(gdp,main="GDP")
+```
+
+```{r echo=FALSE}
+gdp.d1.ar=ar(diff(gdp),method="mle")
+gdp.d1.ar$order
+```
+
+```{r echo=FALSE}
+library(fUnitRoots)
+adfTest(diff(gdp,differences=2),lag=12,type=c("c"))
+```
+
+### Answer: According to result of augmented Dickey-Fuller Test, since the p-value=0.01<0.05, we could reject the null htpothesis and take 2 order of difference.
+
+### (2)
+```{r echo=FALSE}
+library(tseries)
+dx=diff(gdp,differences=2,lag=4)
+plot(ts(dx),col="tan4",lwd=2)
+acf(dx)
+pacf(dx)
+```
+
+### Comment: According to EACF table, we try to fit an ARMA(1,7) model.
+
+```{r echo=FALSE}
+out1=arima(gdp,order=c(1,2,7))
+out1
+```
+
+```{r echo=FALSE}
+acf(out1$residuals)
+pacf(out1$residuals)
+```
+
+### Comment: The ACF and PACF of the residuals show no specific decay pattern or cut off. The EACF table indicates the regression model for residuals is ARMA(0,0). The reisduals are white noise.
+
+```{r echo=FALSE}
+Box.test(out1$residuals,lag=4,type = "Ljung")
+```
+
+### Comment: From the Ljung Box test, the p-value is 0.9997 which shows that the model fitted well.
+
+### (3)
+
+```{r echo=FALSE}
+pred = predict(out1,n.ahead = 4)
+```
+
+```{r echo=FALSE}
+pred$pred
+```
+
+```{r echo=FALSE}
+plot(200901:200904,pred$pred,pch=3,xlim=c(200901,200904),ylim=c(123,127),xlab="Time", ylab="Predict Value")
+lines(200901:200904,pred$pred,col="gold",lwd=2)
+lines(200901:200904,pred$pred+2*pred$se,lty=2,col="steelblue",lwd=2)
+lines(200901:200904,pred$pred-2*pred$se,lty=2,col="steelblue",lwd=2)
+```
+
+## Question 2
+
+### (1)
+
+```{r echo=FALSE}
+h = 12
+yt = arima.sim(n=400,model=list(ar=0.8,ma=0.6,order=c(1,1,1)),sd=1.5)+0.32
+out2 = arima(yt,order=c(1,1,1))
+fore.out2 = predict(out2,n.ahead = h)
+fore.out2$pred[1:h]
+```
+### (2)
+
+```{r echo=FALSE}
+xt = diff(yt,lag=1)
+nobs = length(yt)
+out3 = arima(xt,order=c(1,0,1))
+fore.out3 = predict(out3,n.ahead = h)
+fore.out3$pred[1:h]
+fore.out3$se
+```
+
+### (3)
+```{r echo=FALSE}
+out4=arima(yt,order=c(1,1,1),xreg=1:nobs,include.mean = F)
+fore.out4 = predict(out4,n.ahead = h, newxreg = nobs+1:h)
+fore.out4$pred[1:h]
+fore.out4$se
+```
+
+```{r echo=FALSE}
+plot(c(yt[378:401],fore.out4$pred[1:h]),ylim=c(min(fore.out4$pred[1:h])-100,max(fore.out4$pred[1:h])+100),type="l",ylab="Value",col="steelblue",lwd=2)
+lines(25:36,fore.out4$pred+2*fore.out4$se,lty=2,col="tan4",lwd=2)
+lines(25:36,fore.out4$pred-2*fore.out4$se,lty=2,col="springgreen4",lwd=2)
+```
+
+### (4)
+### Answer: Method: Use the arima() function (without using the xreg argument) to fit an ARIMA(1,1,1) model to the simulated data {yt} directly and Method: Use arima() function with the suitable xreg argument to fit an ARIMA(1,1,1) model to {yt} give the same predictions.
+
+## Question 3
+
+### (1)
+```{r echo=FALSE}
+da = read.csv("UNRATE.csv", header = T)
+unrate=ts(da[,2],frequency = 12,start = c(1948,01))
+plot(unrate,col="springgreen4",lwd=2,main="US Monthly Unemployment Rate")
+acf(unrate,main="UNRATE")
+```
+
+### Answer: The upper time series plot shows that the pattern of the UNRATE data are slow moving and large swing with a seasonal pattern. The lower ACF plot decay slowly and high correlarions. This series looks like random walk.
+
+### (2)
+
+```{r echo=FALSE}
+adfTest(diff(unrate,differences=1),lag=12,type=c("c"))
+```
+### Answer: According to result of augmented Dickey-Fuller Test, since the p-value=0.01<0.05, we could reject null hypotheses. There is not an unit root.
+
+### (3)
+
+```{r echo=FALSE}
+dx = diff(unrate)
+plot(ts(dx),col="purple", lwd=2,ylab="Diff(unrate)",xlab="Time",main="US Monthly Unemployment Rate with Difference")
+acf(dx,lag=12)
+pacf(dx,lag=12)
+```
+
+### Answer: We might use MA model with p=0 and q=5 or ARMA model with p=1 and q=2.
+
+### (4)(5)(6)
+### Model 1: MA(5)
+
+### Simple MA(5)
+```{r echo=FALSE}
+out5 = arma(dx,c(0,5),include.intercept = F) 
+summary(out5)
+abs(polyroot(c(1,out5$coef)))
+res5=out5$res[6:length(dx)]
+acf(res5,na.action=na.pass)
+pacf(res5,na.action=na.pass)
+```
+
+```{r echo=FALSE}
+out6=arma(dx,lag=list(ma=c(1,2,3,4,5,12)),include.intercept=F)
+summary(out6)
+res6=out6$res[13:length(dx)]
+plot(ts(res6))
+acf(res6,na.action=na.pass)
+pacf(res6,na.action=na.pass)
+```
+
+### MA(5) x SAR(1)
+```{r echo=FALSE}
+out7=arima(dx,order=c(0,0,5),seasonal=list(order=c(1,0,0),period=12),include.mean=F)
+out7
+res7=out7$res[13:length(dx)]
+plot(ts(res7))
+acf(res7,na.action=na.pass)
+pacf(res7,na.action=na.pass)
+```
+
+### MA(5) x SAR(1,1)
+```{r echo=FALSE}
+out8=arima(dx,order=c(0,0,5),seasonal=list(order=c(1,0,1),period=12),include.mean=F)
+out8
+res8=out8$res[13:length(dx)]
+plot(ts(res8))
+acf(res8,na.action=na.pass)
+pacf(res8,na.action=na.pass)
+for(ii in 5:10) print(Box.test(res8,ii,"Ljung"))
+```
+
+### Model 2: ARMA(1,2)
+
+### Simple ARMA(1,2)
+```{r echo=FALSE}
+library(tseries)
+library(fUnitRoots)
+library(astsa)
+out9=arima(dx,order=c(1,0,2),include.mean=F)
+out9
+res9=out9$res[3:length(dx)]
+acf(res9)
+pacf(res9)
+```
+
+### ARMA x SAR(1,1)
+```{r echo=FALSE}
+library(tseries)
+library(fUnitRoots)
+library(astsa)
+out10=arima(dx,order=c(1,0,2),seasonal=list(order=c(1,0,1),period=12),include.mean=F)
+out10
+res10=out10$res[13:length(dx)]
+plot(ts(res10))
+acf(res10,na.action=na.pass)
+pacf(res10,na.action=na.pass)
+for(ii in 5:10) print(Box.test(res10,ii,"Ljung"))
+```
+
+### Conclusion: By trying five different simple models and seasonal models above, we could find that ARIMA(0,1,5) x (1,0,1) and ARIMA(1,1,2) x (1,0,1) are comparable. 
+
+### (6)
+
+### Answer: According to Ljung Box test above, the p-value from these two model are both greater than 0.05. The model fitted well.
+
+### (7)
+
+### Prediction from ARIMA(0,1,5) x (1,0,1)
+```{r echo=FALSE}
+fore.out8 = predict(out8, 12)
+fore.out8
+```
+
+```{r echo=FALSE}
+plot(1:12,fore.out8$pred[1:12],pch=3,xlim=c(1,12),ylim=c(min(fore.out8$pred)-2,max(fore.out8$pred+2)),xlab="Time", ylab="Predict Value with Difference",main="Unemployment Rates of The Next 12 Months.")
+lines(1:12,fore.out8$pred,col="gold",lwd=2)
+lines(1:12,fore.out8$pred+2*fore.out8$se,lty=2,col="steelblue",lwd=2)
+lines(1:12,fore.out8$pred-2*fore.out8$se,lty=2,col="steelblue",lwd=2)
+```
+
+### Prediction from ARIMA(1,1,2) x (1,0,1)
+
+```{r echo=FALSE}
+fore.out10 = predict(out10, n.ahead=12)
+fore.out10
+```
+
+```{r echo=FALSE}
+plot(1:12,fore.out10$pred[1:12],pch=3,xlim=c(1,12),ylim=c(min(fore.out10$pred)-2,max(fore.out10$pred+2)),xlab="Time", ylab="Predict Value with Difference",main="Unemployment Rates of The Next 12 Months.")
+lines(1:12,fore.out10$pred,col="gold",lwd=2)
+lines(1:12,fore.out10$pred+2*fore.out10$se,lty=2,col="steelblue",lwd=2)
+lines(1:12,fore.out10$pred-2*fore.out10$se,lty=2,col="steelblue",lwd=2)
+```
+

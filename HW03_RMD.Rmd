@@ -1,0 +1,95 @@
+---
+title: "HW3"
+author: "Xinze Zhou"
+date: "2021/9/20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+### (g)
+
+```{r echo=FALSE}
+hawaii = read.table("G:/MS_Statistics/STAT_439_Han_Xiao/hawaii_new.txt")
+colnames(hawaii)<-c('year-month','total','west-bound','east-bound')
+total.log = log(hawaii$'total')
+hawaii.ts = ts(total.log, start = 1970, freq = 12)
+hawaii.mv = filter(hawaii.ts, sides = 1, c(1/26, rep(1/13,12),1/26))
+plot(hawaii.ts, col = "steelblue", lwd =1.5, main = "Moving Average with the Original Series", ylab = "Total")
+lines(hawaii.mv, col = "gold", lwd = 2)
+```
+
+#### The series is much smoother than original one, and the trend has been eliminated significantly.
+
+### (h)
+
+```{r echo=FALSE}
+n = length(hawaii.ts)
+hh =  total.log
+hh.trend = rep(0, n-24)
+for(i in 13:(n-12)){
+  hh.trend[i-12] = mean(c(0.5*hh[i-12],hh[(i-11):(i+11)],0.5*hh[i+12]))*13/12
+}
+hh.s = hh[13:(n-12)]-hh.trend
+s = rep(0,12)
+for(i in 1:12){
+  s[i] = mean(hh.s[(0:23)*12+i])
+}
+s=s-mean(s)
+s=rep(s,26)
+plot(s[1:100],main="Seasonal Pattern",type="l", col = "steelblue",lwd = 2, ylab = "St")
+```
+
+### (i)
+
+```{r echo=FALSE}
+hh.ds=hh-s
+plot(hh.ds,ylab="Total",main="De-seasoned series",type="o", col = "steelblue")
+hh.mv=filter(c(11.46673,11.4673,hh.ds,13.46979,13.46979),sides = 2,rep(1/12,12))[2:313]
+plot(s+hh.mv,type = "l",main = "Together",col="steelblue", lwd = 2, ylab="Total")
+lines(total.log, col = "gold")
+```
+
+
+### (j)
+
+```{r echo=FALSE}
+fit <- stl(hawaii.ts, s.window="period")
+temp = hh.ds-hh.mv
+plot(temp,type="l", col = "steelblue", lwd = 2, main = "De-seasoned and De-trended", ylab = "Value")
+lines(matrix(fit$time.series[,3]),col="gold")
+```
+
+#### They are almost same as each other.
+
+## Question 4
+### (d)
+
+```{r echo=FALSE}
+r2 = -1/7
+r3 =-9/35
+answer = c(1,3/7,-1/7,-9/35)
+for (i in 5:8){
+ answer[i] = 0.6*answer[i-1]-0.4*answer[i-2]
+}
+plot(answer,type = "h", ylab = "Autocovariances", col = "steelblue",lwd = 2)
+abline(h = 0, col = "gold")
+
+```
+
+### (e)
+
+```{r echo=FALSE}
+T = 20000
+s1 = arima.sim(model=list(ar=c(0.6,-0.4)),T)
+x = acf(s1,ylim=c(-1,1),lag=3)$acf[-1,1,1]
+print('The lag-1, lag-2 and lag-3 sample autocorrelations:')
+print(x)
+autov = 0.031*x
+print("Sample autocovariances:")
+print(autov)
+```
+
